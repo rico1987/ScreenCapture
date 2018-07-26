@@ -6,7 +6,7 @@
         <el-table :data="settings" style="width: 100%" v-show="!showScanTable">
             <el-table-column prop="settingName" label="配置名称" width="180">
             </el-table-column>
-            <el-table-column prop="time" label="创建日期">
+            <el-table-column prop="createTime" label="创建日期">
             </el-table-column>
             <el-table-column label="操作">
                 <template slot-scope="scope">
@@ -18,16 +18,16 @@
         </el-table>
         <el-dialog title="新建截屏配置" class="setting-dialog" :visible.sync="showSettingDialog" width="80%">
             <el-row>
-                <el-form :inline="true">
+                <el-form :inline="true" label-width="120px">
                     <el-form-item label="配置名称：">
                         <el-input type="text" size="mini" v-model="settingName" maxlength="20" />
                     </el-form-item>
-                    <el-form-item label="图片保存地址:">
+                    <el-form-item label="图片保存地址：">
                         <el-button size="mini" @click="chooseSavePath()">选择</el-button>
                         <span>{{savePath}}</span>
                     </el-form-item>
                 </el-form>
-                <el-form>
+                <el-form label-width="120px">
                     <el-form-item label="截图分辨率：">
                         <el-checkbox-group v-model="resolutions">
                             <el-checkbox label="1920X1080"></el-checkbox>
@@ -39,7 +39,7 @@
                             <el-checkbox label="768X1024"></el-checkbox>
                         </el-checkbox-group>
                     </el-form-item>
-                    <el-form-item label="模拟设备型号:">
+                    <el-form-item label="模拟设备型号：">
                         <el-checkbox-group v-model="models">
                             <el-checkbox label="iPhone 6"></el-checkbox>
                             <el-checkbox label="iPhone 6 Plus"></el-checkbox>
@@ -51,8 +51,18 @@
                             <el-checkbox label="iPhone X"></el-checkbox>
                         </el-checkbox-group>
                     </el-form-item>
+                    <el-form-item label="全页面截取：">
+                        <el-checkbox-group v-model="fullScreenWidth">
+                            <el-checkbox label="1800px"></el-checkbox>
+                            <el-checkbox label="1080px"></el-checkbox>
+                            <el-checkbox label="1024px"></el-checkbox>
+                            <el-checkbox label="800px"></el-checkbox>
+                            <el-checkbox label="414px"></el-checkbox>
+                            <el-checkbox label="375px"></el-checkbox>
+                        </el-checkbox-group>
+                    </el-form-item>
                     <el-form-item>
-                        <el-button size="mini" type="primary" plain @click="addWebsite()">添加网站</el-button>
+                        <el-button style="float:right;" size="mini" type="primary" plain @click="addWebsite()">添加网站</el-button>
                     </el-form-item>
                 </el-form>
             </el-row>
@@ -79,7 +89,7 @@
         </el-dialog>
         <el-dialog title="截屏配置详情" class="setting-dialog" :visible.sync="showSettingDetailDialog" v-if="settingDetail" width="80%">
             <el-row>
-                <el-form :inline="true">
+                <el-form label-width="120px" :inline="true">
                     <el-form-item label="配置名称：">
                         <el-input type="text" size="mini" v-model="settingDetail.settingName" disabled maxlength="20" />
                     </el-form-item>
@@ -87,12 +97,15 @@
                         <el-input type="text" size="mini" v-model="settingDetail.savePath" disabled maxlength="20" />
                     </el-form-item>
                 </el-form>
-                <el-form>
+                <el-form label-width="120px">
                     <el-form-item label="截图分辨率：">
                         <el-tag v-bind:key="resolution" size="mini" style="margin-right: 5px;" v-for="resolution in settingDetail.resolutions">{{resolution}}</el-tag>
                     </el-form-item>
                     <el-form-item label="模拟设备型号:">
                         <el-tag v-bind:key="model" size="mini" style="margin-right: 5px;" v-for="model in settingDetail.models">{{model}}</el-tag>
+                    </el-form-item>
+                    <el-form-item label="模拟设备型号:">
+                        <el-tag v-bind:key="width" size="mini" style="margin-right: 5px;" v-for="width in settingDetail.fullScreenWidth">{{width}}</el-tag>
                     </el-form-item>
                 </el-form>
             </el-row>
@@ -139,6 +152,7 @@ export default {
             settingDetail: null,
             showSettingDetailDialog: false,
             resolutions: [],
+            fullScreenWidth: [],
             models: [],
             selectedSetting: null,
             showScanTable: false,
@@ -210,7 +224,7 @@ export default {
                 this.$message.error('请输入配置名称！');
                 return false;
             }
-            if (this.resolutions.length === 0 && this.models.length === 0) {
+            if (this.resolutions.length === 0 && this.models.length === 0 && this.fullScreenWidth.length === 0) {
                 this.$message.error('请至少选择一个分辨率或者型号！');
                 return false;
             }
@@ -227,8 +241,10 @@ export default {
                 resolutions: this.resolutions,
                 webSites: this.webSites,
                 models: this.models,
+                fullScreenWidth: this.fullScreenWidth,
                 savePath: this.savePath,
-                time: new Date(),
+                createTime: new Date(),
+                scanTime: []
             };
             const appConfig = getScanSettings();
             appConfig.settings.push(scanSetting);
@@ -272,7 +288,9 @@ export default {
         margin-bottom: 0;
     }
 }
-
+.el-checkbox+.el-checkbox{
+    margin-left: 15px;
+}
 .back-to-list-btn{
     float: right;
     margin-top: 10px;

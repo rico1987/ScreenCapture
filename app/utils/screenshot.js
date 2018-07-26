@@ -20,6 +20,7 @@ export default async function screenShot(config) {
     }
     await page.screenshot({
         path: PATH.join(config.path, config.fileName),
+        fullPage: config.fullPage ? config.fullPage : false,
     });
     browser.close();
 }
