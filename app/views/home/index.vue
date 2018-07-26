@@ -1,6 +1,5 @@
 <template>
   <div class="home-container">
-        <p @click="test()">aaaa</p>
   </div>
 </template>
 

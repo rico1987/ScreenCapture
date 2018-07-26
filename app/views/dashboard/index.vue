@@ -1,7 +1,7 @@
 <template>
     <div class="dashboard-container">
         <el-row v-show="!showScanTable">
-            <el-button plain size="mini" type="primary" @click="newSettings()">创建配置</el-button>
+            <el-button plain size="mini" type="primary" @click="newSettings()">创建截屏配置</el-button>
         </el-row>
         <el-table :data="settings" style="width: 100%" v-show="!showScanTable">
             <el-table-column prop="settingName" label="配置名称" width="180">
@@ -10,12 +10,13 @@
             </el-table-column>
             <el-table-column label="操作">
                 <template slot-scope="scope">
-                    <el-button size="mini" type="primary" @click="startScan(scope.row)">开始扫描</el-button>
+                    <el-button size="mini" type="primary" @click="startScan(scope.row)">开始截屏</el-button>
+                    <el-button size="mini" @click="checkSetting(scope.$index)">查看配置</el-button>
                     <el-button size="mini" type="danger" @click="removeSetting(scope.$index)">删除</el-button>
                 </template>
             </el-table-column>
         </el-table>
-        <el-dialog title="新建配置" class="setting-dialog" :visible.sync="showSettingDialog" width="80%">
+        <el-dialog title="新建截屏配置" class="setting-dialog" :visible.sync="showSettingDialog" width="80%">
             <el-row>
                 <el-form :inline="true">
                     <el-form-item label="配置名称：">
@@ -23,7 +24,10 @@
                     </el-form-item>
                     <el-form-item label="图片保存地址:">
                         <el-button size="mini" @click="chooseSavePath()">选择</el-button>
+                        <span>{{savePath}}</span>
                     </el-form-item>
+                </el-form>
+                <el-form>
                     <el-form-item label="截图分辨率：">
                         <el-checkbox-group v-model="resolutions">
                             <el-checkbox label="1920X1080"></el-checkbox>
@@ -35,7 +39,7 @@
                             <el-checkbox label="768X1024"></el-checkbox>
                         </el-checkbox-group>
                     </el-form-item>
-                    <el-form-item label="设备型号:">
+                    <el-form-item label="模拟设备型号:">
                         <el-checkbox-group v-model="models">
                             <el-checkbox label="iPhone 6"></el-checkbox>
                             <el-checkbox label="iPhone 6 Plus"></el-checkbox>
@@ -55,7 +59,7 @@
             <el-table :data="webSites" style="width: 100%">
                 <el-table-column label="编号" type="index" width="50">
                 </el-table-column>
-                <el-table-column label="网站地址">
+                <el-table-column label="截图网址">
                     <template slot-scope="scope">
                         <el-input v-model="scope.row.url" size="mini" @blur="checkUrl(scope.$index)"></el-input>
                     </template>
@@ -71,6 +75,36 @@
             <span slot="footer" class="dialog-footer">
                 <el-button size="small" @click="showSettingDialog = false">取 消</el-button>
                 <el-button size="small" type="primary" @click="saveSetting()">确 定</el-button>
+            </span>
+        </el-dialog>
+        <el-dialog title="截屏配置详情" class="setting-dialog" :visible.sync="showSettingDetailDialog" v-if="settingDetail" width="80%">
+            <el-row>
+                <el-form :inline="true">
+                    <el-form-item label="配置名称：">
+                        <el-input type="text" size="mini" v-model="settingDetail.settingName" disabled maxlength="20" />
+                    </el-form-item>
+                    <el-form-item label="图片保存地址:">
+                        <el-input type="text" size="mini" v-model="settingDetail.savePath" disabled maxlength="20" />
+                    </el-form-item>
+                </el-form>
+                <el-form>
+                    <el-form-item label="截图分辨率：">
+                        <el-tag v-bind:key="resolution" size="mini" style="margin-right: 5px;" v-for="resolution in settingDetail.resolutions">{{resolution}}</el-tag>
+                    </el-form-item>
+                    <el-form-item label="模拟设备型号:">
+                        <el-tag v-bind:key="model" size="mini" style="margin-right: 5px;" v-for="model in settingDetail.models">{{model}}</el-tag>
+                    </el-form-item>
+                </el-form>
+            </el-row>
+            <el-table :data="settingDetail.webSites" style="width: 100%">
+                <el-table-column label="截图网址">
+                    <template slot-scope="scope">
+                        {{scope.row.url}}
+                    </template>
+                </el-table-column>
+            </el-table>
+            <span slot="footer" class="dialog-footer">
+                <el-button size="small" type="primary" @click="showSettingDetailDialog = false">确 定</el-button>
             </span>
         </el-dialog>
         <scanUrlTable ref="scan-url-table" v-show="showScanTable" v-if="selectedSetting" :setting="selectedSetting">
@@ -102,6 +136,8 @@ export default {
             settings: [],
             webSites: [],
             showSettingDialog: false,
+            settingDetail: null,
+            showSettingDetailDialog: false,
             resolutions: [],
             models: [],
             selectedSetting: null,
@@ -125,6 +161,10 @@ export default {
             const appConfig = getScanSettings();
             appConfig.settings = this.settings.concat([]);
             setScanSettings(appConfig);
+        },
+        checkSetting(index) {
+            this.settingDetail = this.settings[index];
+            this.showSettingDetailDialog = true;
         },
         startScan(row) {
             this.selectedSetting = row;
@@ -208,7 +248,6 @@ export default {
                 buttonLabel: '选择文件夹',
                 properties: ['openDirectory']
             });
-            debugger
             if (paths) {
                 let path = paths[0]
                 this.savePath = path

@@ -1,6 +1,5 @@
 <template>
     <div class="settings-wrapper">
-        bbbbb
     </div>
 </template>
 

@@ -61,16 +61,23 @@ export default {
     },
     methods: {
         async startScan() {
+            // 保存图片文件时，由于系统不能在文件名中包含 / 所以建立一个文件，维护图片文件对应的截图信息
+            if (fs.existsSync(path.join(this.setting.savePath, 'imageMap.json'))) {
+                iamgeMap = JSON.parse(fs.readFileSync(path.join(this.setting.savePath, 'imageMap.json'), 'utf-8'));
+            } else {
+                iamgeMap = {
+                };
+            }
             for (let i = 0; i < this.setting.webSites.length; i++) {
                 let config = {}
                 config.url = this.setting.webSites[i].url;
-                debugger
                 if (this.setting.models.length > 0) {
                     for (let j = 0; j < this.setting.models.length; j++) {
                         config.width = config.height = null;
                         config.model = this.setting.models[j];
                         config.path = this.setting.savePath;
-                        config.fileName = this.setting.models[j].replace(' ', '_') + '-' + this.setting.settingName + '.jpg';
+                        let url = config.url.replace('')
+                        config.fileName = config.url + '-' + this.setting.models[j].replace(' ', '_') + '-' + this.setting.settingName + '.jpg';
                         await screenShot(config);
                     }
                 }
@@ -80,7 +87,7 @@ export default {
                         config.width = parseInt(this.setting.resolutions[k].split("X")[0]);
                         config.height = parseInt(this.setting.resolutions[k].split("X")[1]);
                         config.path = this.setting.savePath;
-                        config.fileName = this.setting.resolutions[k] + '-' + this.setting.settingName + '.jpg';
+                        config.fileName = config.url + '-' + this.setting.resolutions[k] + '-' + this.setting.settingName + '.jpg';
                         await screenShot(config);
                     }
                 }
