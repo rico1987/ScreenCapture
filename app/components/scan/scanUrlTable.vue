@@ -1,20 +1,35 @@
 <template>
     <div class="scan-url-table-container">
+        <h2>当前截屏配置名称：{{settingName}}</h2>
         <el-table :data="webSites" style="width: 100%">
             <el-table-column prop="url" label="网址">
             </el-table-column>
             <el-table-column label="上次截图时间">
+                <template slot-scope="scope">
+                    {{lastScanTime}}
+                </template>
+            </el-table-column>
+            <el-table-column label="本次截图时间">
+                <template slot-scope="scope">
+                    {{currentScanTime}}
+                </template>
             </el-table-column>
             <el-table-column label="查看截图">
                 <template slot-scope="scope">
-                    <el-tag v-for="resolution in resolutions" size="mini" :key="resolution">{{resolution}}</el-tag>
-                    <el-tag v-for="model in models" size="mini" :key="model">{{model}}</el-tag>
-                    <el-tag v-for="width in fullScreenWidth" size="mini" :key="width">{{'fullScreen-' + width}}</el-tag>
+                    <el-tag v-for="resolution in resolutions" size="mini" :key="resolution">
+                        <span @click="checkScreenShot(scope.row.url, {resolution: resolution})">{{resolution}}</span>
+                    </el-tag>
+                    <el-tag v-for="model in models" size="mini" :key="model">
+                        <span @click="checkScreenShot(scope.row.url, {model: model})">{{model}}</span>
+                    </el-tag>
+                    <el-tag v-for="width in fullScreenWidth" size="mini" :key="width">
+                        <span @click="checkScreenShot(scope.row.url, {width: width})">{{'FullScreen-' + width}}</span>
+                    </el-tag>
                 </template>
             </el-table-column>
-            <el-table-column label="对比分析">
+            <el-table-column label="操作">
                 <template slot-scope="scope">
-                    <el-button plain size="mini">开始分析</el-button>
+                    <el-button type="primary" size="mini">对比分析</el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -23,20 +38,21 @@
         :visible.sync="showProgress"
         width="30%"
         :before-close="handleClose">
-        <span>一共有{{totcalCount}}个截图任务进行中，已完成{{finishedCount}}个</span>
-        <el-slider v-model="finishedCount" :step="totcalCount">
-        </el-slider>
-        <span slot="footer" class="dialog-footer">
-            <el-button type="primary" @click="dialogVisible = false">确 定</el-button>
-        </span>
+            <span>一共有{{totcalCount}}个截图任务进行中，已完成{{finishedCount}}个</span>
+            <el-progress :text-inside="true" :stroke-width="18" :percentage="parseInt(finishedCount/totcalCount*100)" status="success"></el-progress>
         </el-dialog>
     </div>
 </template>
 
 <script>
 import {
+    getScanSettings,
+    setScanSettings,
+} from '@/utils/setting';
+import {
     userDataPath
 } from '@/service/coreService';
+import { formatDate } from '@/utils/index';
 const PATH = require('path');
 const fs = require('fs');
 import screenShot from '@/utils/screenshot';
@@ -60,6 +76,8 @@ export default {
             totcalCount: null,
             finishedCount: null,
             showProgress: false,
+            lastScanTime: null,
+            currentScanTime: null,
         };
     },
     created() {
@@ -67,6 +85,9 @@ export default {
         this.webSites.map((ele) => {
             ele.status = 'connecting'
         });
+        if (this.setting.scanTime.length > 1) {
+            this.lastScanTime = this.setting.scanTime[this.setting.scanTime.length - 2];
+        }
         this.settingName = this.setting.settingName;
         this.resolutions = this.setting.resolutions.concat([]);
         this.models = this.setting.models.concat([]);
@@ -75,11 +96,20 @@ export default {
     mounted() {
         console.log(this.setting);
     },
+
     methods: {
         async startScan() {
             this.showProgress = true;
             this.finishedCount = 0;
             this.totcalCount = this.setting.webSites.length * (this.setting.models.length + this.setting.resolutions.length + this.setting.fullScreenWidth.length);
+            let scanTime = formatDate(new Date(), '{y}-{m}-{d} {h}:{i}:{s}');
+            this.currentScanTime = scanTime;
+            const appConfig = getScanSettings();
+            let settings = appConfig.settings;
+            let currentSetting = settings.find(ele => ele.settingName === this.settingName);
+            currentSetting.scanTime.push(scanTime);
+            const timeIndex = currentSetting.scanTime.length - 1;
+            setScanSettings(appConfig);
             for (let i = 0; i < this.setting.webSites.length; i++) {
                 let config = {}
                 config.url = this.setting.webSites[i].url;
@@ -89,7 +119,7 @@ export default {
                         config.model = this.setting.models[j];
                         config.path = this.setting.savePath;
                         let url = config.url.replace('')
-                        config.fileName = 'websites[' + i + ']' + '-' + this.setting.models[j].replace(' ', '_') + '-' + this.setting.settingName + '.png';
+                        config.fileName = this.setting.settingName + '--' + 'websites[' + i + ']' + '--' + this.setting.models[j].replace(' ', '_') + '--time[' + timeIndex +'].png';
                         await screenShot(config);
                         this.finishedCount++;
                     }
@@ -100,7 +130,7 @@ export default {
                         config.width = parseInt(this.setting.resolutions[k].split("X")[0]);
                         config.height = parseInt(this.setting.resolutions[k].split("X")[1]);
                         config.path = this.setting.savePath;
-                        config.fileName = 'websites[' + i + ']' + '-' + this.setting.resolutions[k] + '-' + this.setting.settingName + '.png';
+                        config.fileName = this.setting.settingName + '--' + 'websites[' + i + ']' + '--' + this.setting.resolutions[k] + '--time[' + timeIndex +'].png';
                         await screenShot(config);
                         this.finishedCount++;
                     }
@@ -112,18 +142,41 @@ export default {
                         config.width = parseInt(this.setting.fullScreenWidth[z]);
                         config.height = 1000;
                         config.path = this.setting.savePath;
-                        config.fileName = 'websites[' + i + ']' + '-' + 'fullScreen' + config.width + '-' + this.setting.settingName + '.png';
+                        config.fileName = this.setting.settingName + '--' + 'websites[' + i + ']' + '--' + 'FullScreen' + config.width + '--time[' + timeIndex +'].png';
                         await screenShot(config);
                         this.finishedCount++;
                     }
                     
                 }
+                this.showProgress = false;
                 this.setting.webSites[i].status = 'finished';
             }
         },
 
-        handleClose() {
+        checkScreenShot(url, info) {
+            let filePath;
+            let websiteIndex = this.setting.webSites.findIndex( ele => ele.url === url);
+            if (info.) {
 
+            }
+
+        },
+
+        handleClose() {
+            if (this.finishedCount !== this.totcalCount) {
+                this.$message.error('截图进行中，请稍等');
+                return false;
+            } else {
+                return true;
+            }
+        },
+
+        checkProgress() {
+            if (this.finishedCount !== this.totcalCount) {
+                this.$message.error('截图进行中，请稍等');
+            } else {
+                this.showProgress = false;
+            }
         },
     },
 };

@@ -229,3 +229,35 @@ export function isStandardBrowserEnv() {
     }
     return typeof window !== 'undefined' && typeof document !== 'undefined';
 }
+
+export function formatDate(date, formatString) {
+    const format = formatString || '{y}-{m}-{d} {h}:{i}:{s}';
+
+
+    let time;
+    if (typeof date === 'object') {
+        time = date;
+    } else {
+        time = new Date(date);
+    }
+
+    const formatObj = {
+        y: time.getFullYear(),
+        m: time.getMonth() + 1,
+        d: time.getDate(),
+        h: time.getHours(),
+        i: time.getMinutes(),
+        s: time.getSeconds(),
+        a: time.getDay(),
+    };
+
+    const timeStr = format.replace(/{(y|m|d|h|i|s|a)+}/g, (match, key) => {
+        let value = formatObj[key];
+        if (value > 0 && value < 10) {
+            value = `0${value}`;
+        }
+        return value || 0;
+    });
+
+    return timeStr;
+}

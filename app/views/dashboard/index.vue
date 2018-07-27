@@ -93,7 +93,7 @@
                     <el-form-item label="配置名称：">
                         <el-input type="text" size="mini" v-model="settingDetail.settingName" disabled maxlength="20" />
                     </el-form-item>
-                    <el-form-item label="图片保存地址:">
+                    <el-form-item label="图片保存地址：">
                         <el-input type="text" size="mini" v-model="settingDetail.savePath" disabled maxlength="20" />
                     </el-form-item>
                 </el-form>
@@ -101,10 +101,10 @@
                     <el-form-item label="截图分辨率：">
                         <el-tag v-bind:key="resolution" size="mini" style="margin-right: 5px;" v-for="resolution in settingDetail.resolutions">{{resolution}}</el-tag>
                     </el-form-item>
-                    <el-form-item label="模拟设备型号:">
+                    <el-form-item label="模拟设备型号：">
                         <el-tag v-bind:key="model" size="mini" style="margin-right: 5px;" v-for="model in settingDetail.models">{{model}}</el-tag>
                     </el-form-item>
-                    <el-form-item label="模拟设备型号:">
+                    <el-form-item label="模拟设备型号：">
                         <el-tag v-bind:key="width" size="mini" style="margin-right: 5px;" v-for="width in settingDetail.fullScreenWidth">{{width}}</el-tag>
                     </el-form-item>
                 </el-form>
@@ -133,6 +133,7 @@ import {
     getScanSettings,
     setScanSettings,
 } from '@/utils/setting';
+import { formatDate } from '@/utils/index';
 import { dialog } from '@/service/coreService';
 import scanUrlTable from '@/components/scan/scanUrlTable';
 
@@ -220,8 +221,12 @@ export default {
             this.webSites.splice(index, 1);
         },
         saveSetting() {
+            const appConfig = getScanSettings();
             if (!this.settingName) {
                 this.$message.error('请输入配置名称！');
+                return false;
+            } else if (appConfig.settings.some(ele => ele.settingName === this.settingName)) {
+                this.$message.error('指定配置名称已存在于配置库中，请重新输入！');
                 return false;
             }
             if (this.resolutions.length === 0 && this.models.length === 0 && this.fullScreenWidth.length === 0) {
@@ -243,10 +248,9 @@ export default {
                 models: this.models,
                 fullScreenWidth: this.fullScreenWidth,
                 savePath: this.savePath,
-                createTime: new Date(),
+                createTime: formatDate(new Date(), '{y}-{m}-{d} {h}:{i}:{s}'),
                 scanTime: []
             };
-            const appConfig = getScanSettings();
             appConfig.settings.push(scanSetting);
             this.settings = appConfig.settings;
             setScanSettings(appConfig);
