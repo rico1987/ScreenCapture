@@ -55,6 +55,7 @@ import {
 import { formatDate } from '@/utils/index';
 const PATH = require('path');
 const fs = require('fs');
+const { shell } = require('electron');
 import screenShot from '@/utils/screenshot';
 
 export default {
@@ -83,7 +84,7 @@ export default {
     created() {
         this.webSites = this.setting.webSites;
         this.webSites.map((ele) => {
-            ele.status = 'connecting'
+            ele.status = 'scanning'
         });
         if (this.setting.scanTime.length > 1) {
             this.lastScanTime = this.setting.scanTime[this.setting.scanTime.length - 2];
@@ -148,18 +149,23 @@ export default {
                     }
                     
                 }
-                this.showProgress = false;
-                this.setting.webSites[i].status = 'finished';
+                this.webSites[i].status = 'finished';
             }
+            this.showProgress = false;
         },
 
         checkScreenShot(url, info) {
             let filePath;
             let websiteIndex = this.setting.webSites.findIndex( ele => ele.url === url);
-            if (info.) {
-
+            let timeIndex = this.setting.scanTime.length - 1;
+            if (info.resolution) {
+                filePath = PATH.join(this.setting.savePath, this.setting.settingName + '--' + 'websites[' + websiteIndex + ']' + '--' + info.resolution + '--time[' + timeIndex +'].png');
+            } else if (info.model) {
+                filePath = PATH.join(this.setting.savePath, this.setting.settingName + '--' + 'websites[' + websiteIndex + ']' + '--' + info.model.replace(' ', '_') + '--time[' + timeIndex +'].png');
+            } else if (info.width) {
+                filePath = PATH.join(this.setting.savePath, this.setting.settingName + '--' + 'websites[' + websiteIndex + ']' + '--' + 'FullScreen' + info.width.replace('px', '') + '--time[' + timeIndex +'].png');
             }
-
+            shell.openItem(filePath);
         },
 
         handleClose() {

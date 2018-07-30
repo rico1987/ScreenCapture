@@ -6,3 +6,5 @@ export const userDataPath = remoteApp.getPath('userData');
 export const appName = remoteApp.getName();
 
 export const { dialog } = electron.remote;
+
+export const { shell } = electron;
